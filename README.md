@@ -43,8 +43,47 @@ Headers: Key = Authorization / Value = Bearer 1
 Bearer 1(N তম টোকেন) DB  েত থাকা ডামি ডাটা টেবিল এ যে টোকেন সেই টোকেন দিয়ে এখানে কাজ করা যাবে 
 https://walinker.buildbdapp.shop/walinker_config/api/index.php/group/80/delete
 
+# Post group 
+body = {
+  "categories": 3,
+  "group_link": "https://chat.whatsapp.com/AbCdEfGh13",
+  "country": 2,
+  "app_id": "123e4567-e89b-12d3-a456-426614174002"
+}
+https://walinker.buildbdapp.shop/walinker_config/api/index.php/group?page=1
 
+# Click log count 
+https://walinker.buildbdapp.shop/walinker_config/api/index.php/click_log?count
 
+# Click log post 
+body = {
+  "user_id": 18,
+  "group_id": 45
+}
 
+https://walinker.buildbdapp.shop/walinker_config/api/index.php/click_log 
 
+# Viwe log post 
+body = {
+  "app_id": 17,
+  "group_id": 45
+}
 
+https://walinker.buildbdapp.shop/walinker_config/api/index.php/view_log
+
+# Report log post 
+body = {
+  "app_id": 24,
+  "group_id": 45
+}
+
+https://walinker.buildbdapp.shop/walinker_config/api/index.php/report_log
+
+# Create new user 
+body = {
+  "app_id": "123e4567-e89b-12d3-a456-426614174008"
+}
+https://walinker.buildbdapp.shop/walinker_config/api/index.php/users
+
+# Count user 
+https://walinker.buildbdapp.shop/walinker_config/api/index.php/users
