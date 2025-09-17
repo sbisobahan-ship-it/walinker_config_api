@@ -87,3 +87,84 @@ https://walinker.buildbdapp.shop/walinker_config/api/index.php/users
 
 # Count user 
 https://walinker.buildbdapp.shop/walinker_config/api/index.php/users
+
+# Count User a days 
+https://walinker.buildbdapp.shop/walinker_config/api/index.php/users?days=7
+
+# All user delels 
+https://walinker.buildbdapp.shop/walinker_config/api/index.php/users/details
+
+# Deasable User 
+body = {
+  "user_id": 25
+
+}
+https://walinker.buildbdapp.shop/walinker_config/api/index.php/users/disable
+
+# Group post un panding and set group+image_link+status
+body = {
+  "group_id": 46,
+  "group_name": "Test Group",
+  "image_link": "http://example.com/img.jpg",
+  "status": "active"
+}
+https://walinker.buildbdapp.shop/walinker_config/api/index.php/group_info
+
+# Get group panding 
+https://walinker.buildbdapp.shop/walinker_config/api/index.php/group_info
+
+# Admin controlar 
+Headers: Key = Authorization / Value = Bearer 1 
+body = {
+  "admin_controlar_id": "1",
+  "help": "Your data ",
+  "service": "Your data ",
+  "policy": "Your data ",
+  "updating": "Your data ",
+  "home_notification": "Your data",
+  "server_activity": "0"
+}
+//এখানে সবগুলো একসাথে আপডেট করা যায় এবং একটি একটি করে আপডেট বা গেট করা যায় 
+https://walinker.buildbdapp.shop/walinker_config/api/index.php/admincontrolar
+
+# Country data get 
+https://walinker.buildbdapp.shop/walinker_config/api/index.php/country
+
+# Country data post 
+Headers: Key = Authorization / Value = Bearer 1 
+body = {
+    "country_name": "Bangladesh"
+}
+https://walinker.buildbdapp.shop/walinker_config/api/index.php/country
+
+# Country data updte/patch 
+Headers: Key = Authorization / Value = Bearer 1 
+{
+    "country_name": "Bangladesh Updated"
+}
+https://walinker.buildbdapp.shop/walinker_config/api/index.php/country/5
+
+# Country data delete 
+Headers: Key = Authorization / Value = Bearer 1
+https://walinker.buildbdapp.shop/walinker_config/api/index.php/country/7
+
+# Category data get 
+https://walinker.buildbdapp.shop/walinker_config/api/index.php/categories
+
+# Category data post 
+Headers: Key = Authorization / Value = Bearer 1
+body = {
+    "category_name": "Electronics"
+}
+https://walinker.buildbdapp.shop/walinker_config/api/index.php/categories
+
+# Category data update/patch
+Headers: Key = Authorization / Value = Bearer 1
+body = {
+    "category_name": "Electronics & Gadgets"
+}
+https://walinker.buildbdapp.shop/walinker_config/api/index.php/categories/3
+
+# Country data delete 
+Headers: Key = Authorization / Value = Bearer 1
+https://walinker.buildbdapp.shop/walinker_config/api/index.php/categories/3
