@@ -174,4 +174,4 @@ https://your_domain.com/walinker_config/api/index.php/categories/3
 body = {
   "fcm_token": "abc123xyzgdgsg56545456456456545f"
 }
-https://walinker.buildbdapp.shop/walinker_config/api/index.php/save_fcm_token
+https://your_domain.com/walinker_config/api/index.php/save_fcm_token
