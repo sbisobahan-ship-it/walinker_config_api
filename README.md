@@ -168,3 +168,10 @@ https://your_domain.com/walinker_config/api/index.php/categories/3
 # Country data delete 
 Headers: Key = Authorization / Value = Bearer 1
 https://your_domain.com/walinker_config/api/index.php/categories/3
+
+
+# Save FMC token in database 
+body = {
+  "fcm_token": "abc123xyzgdgsg56545456456456545f"
+}
+https://walinker.buildbdapp.shop/walinker_config/api/index.php/save_fcm_token
