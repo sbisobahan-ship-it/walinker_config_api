@@ -85,6 +85,12 @@ body = {
 }
 https://your_domain.com/walinker_config/api/index.php/users
 
+# User Validate 
+body = {
+  "app_id": "123e4567-e89b-12d3-a456-426614174008"
+}
+https://walinker.buildbdapp.shop/walinker_config/api/index.php/users/validate
+
 # Count user 
 https://your_domain.com/walinker_config/api/index.php/users
 
