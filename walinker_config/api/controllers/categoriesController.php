@@ -15,7 +15,6 @@ class CategoriesController {
         if ($data === false) {
             send_json(["error" => "Unable to fetch categories"], 500);
         }
-        // সরাসরি অ্যারে রেসপন্স
         send_json($data);
     }
 
@@ -29,7 +28,6 @@ class CategoriesController {
         if ($row === null) {
             send_json(["error" => "Category not found"], 404);
         }
-        // সরাসরি অবজেক্ট রেসপন্স
         send_json($row);
     }
 
@@ -38,9 +36,12 @@ class CategoriesController {
         validate_admin_token($conn);
 
         $name = sanitize_string($data['category_name'] ?? '');
-        if ($name === '') send_json(["error" => "Category name required"], 400);
+        $img  = sanitize_string($data['category_img'] ?? '');
 
-        $id = $this->model->create($name);
+        if ($name === '') send_json(["error" => "Category name required"], 400);
+        if ($img === '')  send_json(["error" => "Category image link required"], 400);
+
+        $id = $this->model->create($name, $img);
         if ($id !== false) {
             send_json(["success" => true, "category_id" => $id]);
         } else {
@@ -56,9 +57,12 @@ class CategoriesController {
         if ($id === false) send_json(["error" => "Invalid id"], 400);
 
         $name = sanitize_string($data['category_name'] ?? '');
-        if ($name === '') send_json(["error" => "Category name required"], 400);
+        $img  = sanitize_string($data['category_img'] ?? '');
 
-        $updated = $this->model->update($id, $name);
+        if ($name === '') send_json(["error" => "Category name required"], 400);
+        if ($img === '')  send_json(["error" => "Category image link required"], 400);
+
+        $updated = $this->model->update($id, $name, $img);
         if ($updated) {
             send_json(["success" => true]);
         } else {
