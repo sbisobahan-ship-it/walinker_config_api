@@ -12,7 +12,9 @@ class Category {
 
     // GET all
     public function getAll() {
-        $sql = "SELECT category_id, category_name FROM {$this->table} ORDER BY category_id ASC";
+        $sql = "SELECT category_id, category_name, category_img 
+                FROM {$this->table} 
+                ORDER BY category_id ASC";
         $stmt = $this->conn->prepare($sql);
         if (!$stmt) return false;
         $stmt->execute();
@@ -25,7 +27,9 @@ class Category {
 
     // GET by ID
     public function getById($id) {
-        $sql = "SELECT category_id, category_name FROM {$this->table} WHERE category_id = ? LIMIT 1";
+        $sql = "SELECT category_id, category_name, category_img 
+                FROM {$this->table} 
+                WHERE category_id = ? LIMIT 1";
         $stmt = $this->conn->prepare($sql);
         if (!$stmt) return false;
         $stmt->bind_param('i', $id);
@@ -36,18 +40,18 @@ class Category {
         return $row ?: null;
     }
 
-    // CREATE
-    public function create($name) {
-        $stmt = $this->conn->prepare("INSERT INTO {$this->table} (category_name) VALUES (?)");
-        $stmt->bind_param("s", $name);
+    // CREATE with name + image link
+    public function create($name, $img) {
+        $stmt = $this->conn->prepare("INSERT INTO {$this->table} (category_name, category_img) VALUES (?, ?)");
+        $stmt->bind_param("ss", $name, $img);
         if ($stmt->execute()) return $this->conn->insert_id;
         return false;
     }
 
-    // UPDATE
-    public function update($id, $name) {
-        $stmt = $this->conn->prepare("UPDATE {$this->table} SET category_name = ? WHERE category_id = ?");
-        $stmt->bind_param("si", $name, $id);
+    // UPDATE with name + image link
+    public function update($id, $name, $img) {
+        $stmt = $this->conn->prepare("UPDATE {$this->table} SET category_name = ?, category_img = ? WHERE category_id = ?");
+        $stmt->bind_param("ssi", $name, $img, $id);
         $stmt->execute();
         return $stmt->affected_rows > 0;
     }
