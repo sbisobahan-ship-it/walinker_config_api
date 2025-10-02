@@ -50,6 +50,33 @@ function handle_users_request($route_parts, $conn) {
         }
     }
 
+// ✅ POST /users/validate → লোকাল app_id এখনো ভ্যালিড কিনা চেক
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($route_parts[1]) && $route_parts[1] === 'validate') {
+        $input = json_decode(file_get_contents('php://input'), true);
+
+        if (!isset($input['app_id']) || empty(trim($input['app_id']))) {
+            send_json(["error" => "app_id is required"], 400);
+        }
+
+        $app_id = sanitize_string($input['app_id']);
+        if (strlen($app_id) !== 36) {
+            send_json(["error" => "invalid app_id length"], 400);
+        }
+
+        $user = $usermodel->getuserbyappid($app_id);
+        if ($user && (int)$user['user_id'] > 0) {
+            send_json([
+                "valid" => true,
+                "user_id" => (int)$user['user_id']
+            ], 200);
+        } else {
+            send_json([
+                "valid" => false,
+                "error" => "app_id not found"
+            ], 404);
+        }
+    }
+    
     // -------------------
     // GET /users → ইউজার কাউন্ট
     // -------------------
@@ -173,3 +200,4 @@ function handle_users_request($route_parts, $conn) {
     send_json(["error" => "method not allowed"], 405);
 }
 ?>
+
