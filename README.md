@@ -15,6 +15,9 @@ https://your_domain.com/walinker_config/api/index.php/group?count_7
 # Get Group of number (n number group )
 https://your_domain.com/walinker_config/api/index.php/group/45
 
+# Get Group of User id 
+https://your_domain.com/walinker_config/api/index.php/group/by_app_id/your app id 63cracketer
+
 # Get country filter group 
 https://your_domain.com/walinker_config/api/index.php/group?page=1&country=Bangladesh
 
