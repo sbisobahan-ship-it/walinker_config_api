@@ -22,7 +22,7 @@ function handle_group_request($route_parts, $conn) {
         $app_id = sanitize_string($input['app_id']);
         $group_link = sanitize_string($input['group_link']);
 
-        // Flexible WhatsApp group or channel link validation
+        // Validate WhatsApp group or channel link
         if (!preg_match('/^https?:\/\/(www\.)?chat\.whatsapp\.com(\/invite)?\/[A-Za-z0-9]+$/', $group_link) &&
             !preg_match('/^https?:\/\/(www\.)?whatsapp\.com\/channel\/[A-Za-z0-9]+$/', $group_link)) {
             send_json(["error"=>"Invalid WhatsApp group or channel link"], 400);
@@ -77,7 +77,7 @@ function handle_group_request($route_parts, $conn) {
     // ----------------------
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
-        // --- By app_id (custom route) ---
+        // --- By app_id (custom route with join group_info) ---
         if (isset($route_parts[1]) && $route_parts[1] === 'by_app_id') {
             $app_id = isset($route_parts[2]) ? sanitize_string($route_parts[2]) : null;
             if (!$app_id) send_json(["error"=>"app_id required"], 400);
@@ -86,12 +86,30 @@ function handle_group_request($route_parts, $conn) {
             if (!$user) send_json(["error"=>"Invalid app_id"], 404);
             $user_id = $user['user_id'];
 
-            $stmt = $conn->prepare("
-                SELECT g.group_id, g.group_link, g.categories, g.post_panding, g.post_at
+            $query = "
+                SELECT 
+                    g.group_id,
+                    g.group_link,
+                    g.categories,
+                    g.country,
+                    g.post_panding,
+                    g.post_at,
+                    g.delete_group,
+                    gi.group_info_id,
+                    gi.group_name,
+                    gi.image_link,
+                    gi.status
                 FROM `group` g
+                LEFT JOIN `group_info` gi ON g.group_id = gi.group_id
                 WHERE g.user_id = ? AND g.delete_group = 0
                 ORDER BY g.post_at DESC
-            ");
+            ";
+
+            $stmt = $conn->prepare($query);
+            if (!$stmt) {
+                send_json(["error" => "SQL prepare failed", "details" => $conn->error], 500);
+            }
+
             $stmt->bind_param("i", $user_id);
             $stmt->execute();
             $result = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
