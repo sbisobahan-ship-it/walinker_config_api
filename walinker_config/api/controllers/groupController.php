@@ -28,40 +28,33 @@ function handle_group_request($route_parts, $conn) {
             send_json(["error"=>"Invalid WhatsApp group or channel link"], 400);
         }
 
-        // Optional: check token length (prevent very short invalid links)
         $token = substr($group_link, strrpos($group_link, '/') + 1);
         if (strlen($token) < 10) {
             send_json(["error"=>"Invalid WhatsApp group or channel link token"], 400);
         }
 
-        // Step 1: Validate app_id and get user_id
         $user = $userModel->getUserByAppId($app_id);
         if (!$user) send_json(["error"=>"Invalid app_id"], 400);
         $user_id = $user['user_id'];
 
-        // Step 2: Duplicate link check
         if ($groupModel->isDuplicateLink($group_link)) {
             send_json(["error"=>"This group link already exists"], 409);
         }
 
-        // Step 3: Rate-limit check (1 minute)
         if ($groupModel->isRecentlyPosted($user_id, 60)) {
             send_json(["error"=>"You can post only once per minute"], 429);
         }
 
-        // Step 4: Validate category
         $chk_cat = $conn->prepare("SELECT category_id FROM categories WHERE category_id = ?");
         $chk_cat->bind_param("i", $input['categories']);
         $chk_cat->execute();
         if ($chk_cat->get_result()->num_rows === 0) send_json(["error"=>"Invalid category"],400);
 
-        // Step 5: Validate country
         $chk_country = $conn->prepare("SELECT country_id FROM country WHERE country_id = ?");
         $chk_country->bind_param("i", $input['country']);
         $chk_country->execute();
         if ($chk_country->get_result()->num_rows === 0) send_json(["error"=>"Invalid country"],400);
 
-        // Step 6: Create group
         $data = [
             'user_id' => $user_id,
             'categories' => $input['categories'],
@@ -69,9 +62,6 @@ function handle_group_request($route_parts, $conn) {
             'country' => $input['country']
         ];
         if ($groupModel->create($data)) {
-            // -----------------------------
-            // Send push notification
-            // -----------------------------
             $title = "New Post!";
             $body  = "Please Approve or Reject: " . $group_link;
             sendFCMNotification($title, $body, $conn);
@@ -83,10 +73,38 @@ function handle_group_request($route_parts, $conn) {
     }
 
     // ----------------------
-    // GET /group, /group/{id}, /group/by_user/{user_id}
+    // GET /group
     // ----------------------
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-        // --- By User ID ---
+
+        // --- By app_id (custom route) ---
+        if (isset($route_parts[1]) && $route_parts[1] === 'by_app_id') {
+            $app_id = isset($route_parts[2]) ? sanitize_string($route_parts[2]) : null;
+            if (!$app_id) send_json(["error"=>"app_id required"], 400);
+
+            $user = $userModel->getUserByAppId($app_id);
+            if (!$user) send_json(["error"=>"Invalid app_id"], 404);
+            $user_id = $user['user_id'];
+
+            $stmt = $conn->prepare("
+                SELECT g.group_id, g.group_link, g.categories, g.post_panding, g.post_at
+                FROM `group` g
+                WHERE g.user_id = ? AND g.delete_group = 0
+                ORDER BY g.post_at DESC
+            ");
+            $stmt->bind_param("i", $user_id);
+            $stmt->execute();
+            $result = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            $stmt->close();
+
+            send_json([
+                "user_id" => $user_id,
+                "total_groups" => count($result),
+                "data" => $result
+            ]);
+        }
+
+        // --- By User ID (legacy) ---
         if (isset($route_parts[1]) && $route_parts[1] === 'by_user') {
             $user_id = isset($route_parts[2]) ? intval($route_parts[2]) : null;
             if (!$user_id) send_json(["error"=>"User ID required"], 400);
@@ -110,7 +128,6 @@ function handle_group_request($route_parts, $conn) {
         $category_name = isset($_GET['categories']) ? sanitize_string($_GET['categories']) : null;
         $group_name = isset($_GET['group_name']) ? sanitize_string($_GET['group_name']) : null;
 
-        // group_name filter minimum 3 chars
         if (isset($_GET['group_name'])) {
             $gn = trim($_GET['group_name']);
             if ($gn === '' || mb_strlen($gn) < 3) {
@@ -162,7 +179,6 @@ function handle_group_request($route_parts, $conn) {
         $group_id = intval($route_parts[1]);
         if ($route_parts[2] !== "delete") send_json(["error"=>"Invalid PATCH action"],400);
 
-        // Authorization: Bearer token
         $headers = getallheaders();
         $authHeader = isset($headers['Authorization']) ? $headers['Authorization'] : null;
         $bearerToken = null;
@@ -170,14 +186,12 @@ function handle_group_request($route_parts, $conn) {
             $bearerToken = $matches[1];
         }
 
-        // Dummy token from dummy_data table
         $stmt_token = $conn->prepare("SELECT data FROM dummy_data WHERE id = 1 LIMIT 1");
         $stmt_token->execute();
         $dummy_token = $stmt_token->get_result()->fetch_assoc()['data'] ?? null;
 
         $isAuthorized = false;
 
-        // Case 1: app_id check
         $input = json_decode(file_get_contents('php://input'), true);
         if (isset($input['app_id'])) {
             $app_id = sanitize_string($input['app_id']);
@@ -194,7 +208,6 @@ function handle_group_request($route_parts, $conn) {
             if ($result->num_rows > 0) $isAuthorized = true;
         }
 
-        // Case 2: Bearer token matches dummy_data
         if ($bearerToken && $dummy_token && $bearerToken === $dummy_token) {
             $isAuthorized = true;
         }
@@ -203,7 +216,6 @@ function handle_group_request($route_parts, $conn) {
             send_json(["error"=>"Unauthorized request"],403);
         }
 
-        // Update delete_group
         $stmt_update = $conn->prepare("UPDATE `group` SET delete_group = 1 WHERE group_id = ?");
         $stmt_update->bind_param("i", $group_id);
         $stmt_update->execute();
