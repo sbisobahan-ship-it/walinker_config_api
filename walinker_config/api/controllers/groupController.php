@@ -16,44 +16,48 @@ function handle_group_request($route_parts, $conn) {
         if (!$input) send_json(["error" => "Invalid JSON"], 400);
 
         if (!isset($input['app_id'], $input['categories'], $input['group_link'], $input['country'])) {
-            send_json(["error"=>"Missing required fields"], 400);
+            send_json(["error" => "Missing required fields"], 400);
         }
 
         $app_id = sanitize_string($input['app_id']);
         $group_link = sanitize_string($input['group_link']);
 
         // Validate WhatsApp group or channel link
-        if (!preg_match('/^https?:\/\/(www\.)?chat\.whatsapp\.com(\/invite)?\/[A-Za-z0-9]+$/', $group_link) &&
-            !preg_match('/^https?:\/\/(www\.)?whatsapp\.com\/channel\/[A-Za-z0-9]+$/', $group_link)) {
-            send_json(["error"=>"Invalid WhatsApp group or channel link"], 400);
+        if (
+            !preg_match('/^https?:\/\/(www\.)?chat\.whatsapp\.com(\/invite)?\/[A-Za-z0-9]+$/', $group_link) &&
+            !preg_match('/^https?:\/\/(www\.)?whatsapp\.com\/channel\/[A-Za-z0-9]+$/', $group_link)
+        ) {
+            send_json(["error" => "Invalid WhatsApp group or channel link"], 400);
         }
 
         $token = substr($group_link, strrpos($group_link, '/') + 1);
         if (strlen($token) < 10) {
-            send_json(["error"=>"Invalid WhatsApp group or channel link token"], 400);
+            send_json(["error" => "Invalid WhatsApp group or channel link token"], 400);
         }
 
         $user = $userModel->getUserByAppId($app_id);
-        if (!$user) send_json(["error"=>"Invalid app_id"], 400);
+        if (!$user) send_json(["error" => "Invalid app_id"], 400);
         $user_id = $user['user_id'];
 
         if ($groupModel->isDuplicateLink($group_link)) {
-            send_json(["error"=>"This group link already exists"], 409);
+            send_json(["error" => "This group link already exists"], 409);
         }
 
         if ($groupModel->isRecentlyPosted($user_id, 60)) {
-            send_json(["error"=>"You can post only once per minute"], 429);
+            send_json(["error" => "You can post only once per minute"], 429);
         }
 
+        // Validate category
         $chk_cat = $conn->prepare("SELECT category_id FROM categories WHERE category_id = ?");
         $chk_cat->bind_param("i", $input['categories']);
         $chk_cat->execute();
-        if ($chk_cat->get_result()->num_rows === 0) send_json(["error"=>"Invalid category"],400);
+        if ($chk_cat->get_result()->num_rows === 0) send_json(["error" => "Invalid category"], 400);
 
+        // Validate country
         $chk_country = $conn->prepare("SELECT country_id FROM country WHERE country_id = ?");
         $chk_country->bind_param("i", $input['country']);
         $chk_country->execute();
-        if ($chk_country->get_result()->num_rows === 0) send_json(["error"=>"Invalid country"],400);
+        if ($chk_country->get_result()->num_rows === 0) send_json(["error" => "Invalid country"], 400);
 
         $data = [
             'user_id' => $user_id,
@@ -61,14 +65,14 @@ function handle_group_request($route_parts, $conn) {
             'group_link' => $group_link,
             'country' => $input['country']
         ];
+
         if ($groupModel->create($data)) {
             $title = "New Post!";
-            $body  = "Please Approve or Reject: " . $group_link;
+            $body = "Please Approve or Reject: " . $group_link;
             sendFCMNotification($title, $body, $conn);
-
-            send_json(["success"=>"Group created successfully"], 201);
+            send_json(["success" => "Group created successfully"], 201);
         } else {
-            send_json(["error"=>"Failed to create group"],500);
+            send_json(["error" => "Failed to create group"], 500);
         }
     }
 
@@ -77,30 +81,35 @@ function handle_group_request($route_parts, $conn) {
     // ----------------------
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
-        // --- By app_id (custom route with join group_info) ---
+        // --- By app_id (custom route) ---
         if (isset($route_parts[1]) && $route_parts[1] === 'by_app_id') {
             $app_id = isset($route_parts[2]) ? sanitize_string($route_parts[2]) : null;
-            if (!$app_id) send_json(["error"=>"app_id required"], 400);
+            if (!$app_id) send_json(["error" => "app_id required"], 400);
 
             $user = $userModel->getUserByAppId($app_id);
-            if (!$user) send_json(["error"=>"Invalid app_id"], 404);
+            if (!$user) send_json(["error" => "Invalid app_id"], 404);
             $user_id = $user['user_id'];
 
+            // ✅ Updated Query: include click_log, view_log, report_log totals
             $query = "
                 SELECT 
                     g.group_id,
+                    gi.group_name,
+                    gi.image_link,
+                    gi.status,
+                    c.category_name,
+                    co.country_name,
                     g.group_link,
-                    g.categories,
-                    g.country,
                     g.post_panding,
                     g.post_at,
                     g.delete_group,
-                    gi.group_info_id,
-                    gi.group_name,
-                    gi.image_link,
-                    gi.status
+                    (SELECT COUNT(*) FROM click_log cl WHERE cl.group_id = g.group_id) AS total_clicks,
+                    (SELECT COUNT(*) FROM view_log vl WHERE vl.group_id = g.group_id) AS total_views,
+                    (SELECT COUNT(*) FROM report_log rl WHERE rl.group_id = g.group_id) AS total_reports
                 FROM `group` g
                 LEFT JOIN `group_info` gi ON g.group_id = gi.group_id
+                LEFT JOIN `categories` c ON g.categories = c.category_id
+                LEFT JOIN `country` co ON g.country = co.country_id
                 WHERE g.user_id = ? AND g.delete_group = 0
                 ORDER BY g.post_at DESC
             ";
@@ -125,7 +134,7 @@ function handle_group_request($route_parts, $conn) {
         // --- By User ID (legacy) ---
         if (isset($route_parts[1]) && $route_parts[1] === 'by_user') {
             $user_id = isset($route_parts[2]) ? intval($route_parts[2]) : null;
-            if (!$user_id) send_json(["error"=>"User ID required"], 400);
+            if (!$user_id) send_json(["error" => "User ID required"], 400);
 
             $stmt = $conn->prepare("SELECT COUNT(*) AS total_groups FROM `group` WHERE user_id = ?");
             $stmt->bind_param("i", $user_id);
@@ -138,7 +147,7 @@ function handle_group_request($route_parts, $conn) {
             ]);
         }
 
-        // Pagination & filters
+        // --- Pagination & filters ---
         $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
         if ($page < 1) $page = 1;
 
@@ -149,11 +158,11 @@ function handle_group_request($route_parts, $conn) {
         if (isset($_GET['group_name'])) {
             $gn = trim($_GET['group_name']);
             if ($gn === '' || mb_strlen($gn) < 3) {
-                send_json(["page"=>$page,"limit"=>10,"data"=>[]]);
+                send_json(["page" => $page, "limit" => 10, "data" => []]);
             }
         }
 
-        // Count logic
+        // --- Count logic ---
         $count = null;
         foreach ($_GET as $key => $value) {
             if (preg_match('/^count_(\d+)$/', $key, $matches)) {
@@ -172,20 +181,20 @@ function handle_group_request($route_parts, $conn) {
         }
 
         if ($count !== null) {
-            send_json(["count"=>$count]);
+            send_json(["count" => $count]);
         }
 
-        // Normal listing
+        // --- Default listing ---
         if (!isset($route_parts[1])) {
             $groups = $groupModel->getAll($page, 10, true, $country_name, $category_name, $group_name);
-            send_json(["page"=>$page,"limit"=>10,"data"=>$groups]);
+            send_json(["page" => $page, "limit" => 10, "data" => $groups]);
         } else {
             $id = intval($route_parts[1]);
             $group = $groupModel->getById($id, true);
             if ($group && $group['delete_group'] == 0) {
                 send_json($group);
             } else {
-                send_json(["error"=>"Group not found"],404);
+                send_json(["error" => "Group not found"], 404);
             }
         }
     }
@@ -195,7 +204,7 @@ function handle_group_request($route_parts, $conn) {
     // ----------------------
     if ($_SERVER['REQUEST_METHOD'] === 'PATCH' && isset($route_parts[1]) && isset($route_parts[2])) {
         $group_id = intval($route_parts[1]);
-        if ($route_parts[2] !== "delete") send_json(["error"=>"Invalid PATCH action"],400);
+        if ($route_parts[2] !== "delete") send_json(["error" => "Invalid PATCH action"], 400);
 
         $headers = getallheaders();
         $authHeader = isset($headers['Authorization']) ? $headers['Authorization'] : null;
@@ -209,8 +218,8 @@ function handle_group_request($route_parts, $conn) {
         $dummy_token = $stmt_token->get_result()->fetch_assoc()['data'] ?? null;
 
         $isAuthorized = false;
-
         $input = json_decode(file_get_contents('php://input'), true);
+
         if (isset($input['app_id'])) {
             $app_id = sanitize_string($input['app_id']);
             $stmt_check = $conn->prepare("
@@ -222,8 +231,7 @@ function handle_group_request($route_parts, $conn) {
             ");
             $stmt_check->bind_param("is", $group_id, $app_id);
             $stmt_check->execute();
-            $result = $stmt_check->get_result();
-            if ($result->num_rows > 0) $isAuthorized = true;
+            if ($stmt_check->get_result()->num_rows > 0) $isAuthorized = true;
         }
 
         if ($bearerToken && $dummy_token && $bearerToken === $dummy_token) {
@@ -231,7 +239,7 @@ function handle_group_request($route_parts, $conn) {
         }
 
         if (!$isAuthorized) {
-            send_json(["error"=>"Unauthorized request"],403);
+            send_json(["error" => "Unauthorized request"], 403);
         }
 
         $stmt_update = $conn->prepare("UPDATE `group` SET delete_group = 1 WHERE group_id = ?");
@@ -239,9 +247,10 @@ function handle_group_request($route_parts, $conn) {
         $stmt_update->execute();
 
         if ($stmt_update->affected_rows > 0) {
-            send_json(["success"=>"delete_group set to 1"]);
+            send_json(["success" => "delete_group set to 1"]);
         } else {
-            send_json(["error"=>"Group not found or already deleted"],404);
+            send_json(["error" => "Group not found or already deleted"], 404);
         }
     }
 }
+?>
