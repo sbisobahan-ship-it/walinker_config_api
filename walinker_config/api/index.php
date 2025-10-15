@@ -81,6 +81,7 @@ require_once __DIR__ . '/routes/view_log.php';
 require_once __DIR__ . '/routes/report_log.php'; 
 require_once __DIR__ . '/routes/group_info.php';  
 require_once __DIR__ . '/routes/admincontrolar.php';
+require_once __DIR__ . '/routes/send_sms.php';
 
 // Allowed routes
 $allowed_routes = [
@@ -94,6 +95,7 @@ $allowed_routes = [
     'group_info',
     'admincontrolar',
     'save_fcm_token' // ✅ নতুন FCM রাউট
+    , 'send_sms'
 ];
 
 // যদি কোনো রাউট ম্যাচ না হয়
