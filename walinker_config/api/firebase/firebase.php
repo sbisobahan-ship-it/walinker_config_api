@@ -3,6 +3,13 @@
 require_once __DIR__ . '/../config/db_connect.php';
 require_once 'get-access-token.php';
 
+// ✅ Add this fallback for PHP < 8.0
+if (!function_exists('str_contains')) {
+    function str_contains($haystack, $needle) {
+        return $needle !== '' && mb_strpos($haystack, $needle) !== false;
+    }
+}
+
 /**
  * Send FCM notification (data-only) to all tokens in admin_tokens
  * Auto-delete invalid tokens
@@ -46,7 +53,7 @@ function sendFCMNotification($title, $body, $conn) {
         $message = [
             'message' => [
                 'token' => $token,
-                // ✅ Notification optional for foreground
+                // ✅ Notification (optional for foreground)
                 'notification' => [
                     'title' => $title,
                     'body' => $body
