@@ -184,3 +184,19 @@ body = {
   "fcm_token": "abc123xyzgdgsg56545456456456545f"
 }
 https://your_domain.com/walinker_config/api/index.php/save_fcm_token
+
+# Send sms get null user id 
+https://your_domain.com/walinker_config/api/index.php/send_sms
+
+# Send sms get user id + null user id data 
+https://your_domain.com/walinker_config/api/index.php/send_sms?app_id=9dffda3e-153b-4b60-9799-97b6fdb726bd
+
+# Post admin barear token 
+https://your_domain.com/walinker_config/api/index.php/send_sms
+body = {"user_id":5,"sms":"আমার সোনার বাংলা"}
+header = Key = Authorization / Value = Bearer 123
+
+# Delete admin derear token 
+https://your_domain.com/walinker_config/api/index.php/send_sms
+header = Key = Authorization / Value = Bearer 123
+body= {"sms_id":5}
