@@ -1,0 +1,18 @@
+[27-Oct-2025 04:56:21 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function onGroupInfoPost() in /home/aycalyfo/walinker.buildbdapp.shop/walinker/walinker_config/api/controllers/group_infoController.php:44
+Stack trace:
+#0 /home/aycalyfo/walinker.buildbdapp.shop/walinker/walinker_config/api/routes/group_info.php(5): handle_group_info_request(Array, Object(mysqli))
+#1 /home/aycalyfo/walinker.buildbdapp.shop/walinker/walinker_config/api/index.php(186): require_once('/home/aycalyfo/...')
+#2 {main}
+  thrown in /home/aycalyfo/walinker.buildbdapp.shop/walinker/walinker_config/api/controllers/group_infoController.php on line 44
+[27-Oct-2025 05:22:00 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function sendPushNotification() in /home/aycalyfo/walinker.buildbdapp.shop/walinker/walinker_config/api/controllers/group_infoController.php:45
+Stack trace:
+#0 /home/aycalyfo/walinker.buildbdapp.shop/walinker/walinker_config/api/routes/group_info.php(5): handle_group_info_request(Array, Object(mysqli))
+#1 /home/aycalyfo/walinker.buildbdapp.shop/walinker/walinker_config/api/index.php(186): require_once('/home/aycalyfo/...')
+#2 {main}
+  thrown in /home/aycalyfo/walinker.buildbdapp.shop/walinker/walinker_config/api/controllers/group_infoController.php on line 45
+[27-Oct-2025 05:22:39 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function sendPushNotification() in /home/aycalyfo/walinker.buildbdapp.shop/walinker/walinker_config/api/controllers/group_infoController.php:45
+Stack trace:
+#0 /home/aycalyfo/walinker.buildbdapp.shop/walinker/walinker_config/api/routes/group_info.php(5): handle_group_info_request(Array, Object(mysqli))
+#1 /home/aycalyfo/walinker.buildbdapp.shop/walinker/walinker_config/api/index.php(186): require_once('/home/aycalyfo/...')
+#2 {main}
+  thrown in /home/aycalyfo/walinker.buildbdapp.shop/walinker/walinker_config/api/controllers/group_infoController.php on line 45
